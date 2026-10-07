@@ -13,6 +13,8 @@ int currentWarningLevel = WARNING_SAFE;
 int currentBoundarySide = BOUNDARY_SIDE_OTHER;
 bool radioIsReady = false;
 
+unsigned long lastRadioSendMillis = 0;
+
 void updateBoatPosition()
 {
     float localX = convertLongitudeToLocalX(currentGpsPoint.longitude);
@@ -51,7 +53,7 @@ void setup()
     Serial.println();
     Serial.println("==================================================");
     Serial.println("   AquaShield - Boat Unit (ESP32)                 ");
-    Serial.println("   GPS Simulation: 15s | Sends ONLY if issue      ");
+    Serial.println("   GPS Simulation: 15s | Telemetry: 2s Continuous ");
     Serial.println("==================================================");
 
     startLocationSource();
@@ -65,11 +67,19 @@ void setup()
 
     if (radioIsReady)
     {
-        Serial.println("[OK] nRF24L01+ transmitter ready on Channel 108");
+        Serial.print("[OK] nRF24L01+ transmitter ready on Channel ");
+        Serial.println(NRF_CHANNEL);
+
+        // Send initial packet at boot so receiver confirms connection immediately
+        sendBoatData(currentGpsPoint.latitude, currentGpsPoint.longitude,
+                     currentMinimumDistance, currentWarningLevel,
+                     currentBoundarySide);
+        Serial.println("[TX #1] Initial connection packet broadcasted to Coast Guard Base.");
+        lastRadioSendMillis = millis();
     }
     else
     {
-        Serial.println("[ERROR] nRF24L01+ transmitter not found! Check 3.3V power and wiring.");
+        Serial.println("[ERROR] nRF24L01+ transmitter not found! Check 3.3V power and SPI wiring.");
     }
 }
 
@@ -78,49 +88,49 @@ void loop()
     // Read new simulated GPS position (advances every 15 seconds)
     if (readLocation(&currentGpsPoint))
     {
-        // Calculate distance and warning level
         updateBoatPosition();
+    }
 
-        // ONLY send data if there is an issue (WARNING or DANGER)
-        if (currentWarningLevel != WARNING_SAFE)
+    // Transmit telemetry packet every RADIO_SEND_INTERVAL_MS (2 seconds continuous)
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastRadioSendMillis >= RADIO_SEND_INTERVAL_MS)
+    {
+        lastRadioSendMillis = currentMillis;
+
+        if (radioIsReady)
         {
-            if (radioIsReady)
-            {
-                bool packetSent = sendBoatData(currentGpsPoint.latitude, currentGpsPoint.longitude,
-                                               currentMinimumDistance, currentWarningLevel,
-                                               currentBoundarySide);
+            sendBoatData(currentGpsPoint.latitude, currentGpsPoint.longitude,
+                         currentMinimumDistance, currentWarningLevel,
+                         currentBoundarySide);
 
-                if (packetSent)
-                {
-                    Serial.print("[ALERT TX] Issue detected (");
-                    Serial.print(getWarningLabel(currentWarningLevel));
-                    Serial.println(")! Packet transmitted to Coast Guard.");
-                }
-                else
-                {
-                    Serial.println("[ERROR] Radio transmission failed. Check nRF24 module.");
-                }
+            if (currentWarningLevel != WARNING_SAFE)
+            {
+                Serial.print("[ALERT TX #");
+                Serial.print(boatPacketSeq);
+                Serial.print("] Issue detected (");
+                Serial.print(getWarningLabel(currentWarningLevel));
+                Serial.print(")! Dist: ");
+                Serial.print(currentMinimumDistance, 0);
+                Serial.println("m -> Transmitted to Coast Guard.");
             }
             else
             {
-                Serial.println("[ERROR] Radio is NOT ready! Retrying nRF24 initialization...");
-                radioIsReady = startBoatRadio();
-                if (radioIsReady)
-                {
-                    Serial.println("[OK] nRF24L01+ transmitter recovered! Sending packet...");
-                    sendBoatData(currentGpsPoint.latitude, currentGpsPoint.longitude,
-                                 currentMinimumDistance, currentWarningLevel,
-                                 currentBoundarySide);
-                }
-                else
-                {
-                    Serial.println("[ERROR] nRF24L01+ not responding! Check 3.3V power, GND, and SPI wiring.");
-                }
+                Serial.print("[TX #");
+                Serial.print(boatPacketSeq);
+                Serial.print("] Safe telemetry packet sent. Dist: ");
+                Serial.print(currentMinimumDistance, 0);
+                Serial.println("m");
             }
         }
         else
         {
-            Serial.println("[SAFE] Boat is in safe waters (>2000m). No issue to transmit.");
+            // Auto-retry radio initialization if it failed earlier
+            Serial.println("[ERROR] Radio is NOT ready! Retrying nRF24 initialization...");
+            radioIsReady = startBoatRadio();
+            if (radioIsReady)
+            {
+                Serial.println("[OK] nRF24L01+ transmitter recovered! Resuming transmission...");
+            }
         }
     }
 

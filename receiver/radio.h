@@ -87,35 +87,34 @@ inline bool startCoastGuardRadio()
     }
 
     radio.setChannel(NRF_CHANNEL);
-    radio.setDataRate(RF24_1MBPS);           // 1Mbps universal speed
-    radio.setPALevel(RF24_PA_HIGH);          // High power reception
-    radio.setAutoAck(NRF_ENABLE_AUTO_ACK);   // Match broadcast mode
+    radio.setDataRate(RF24_1MBPS);              // 1Mbps universal speed
+    radio.setPALevel(RF24_PA_LOW);             // Low power (matches transmitter, avoids saturation)
+    radio.setAutoAck(NRF_ENABLE_AUTO_ACK);      // Broadcast mode (false)
+    radio.setCRCLength(RF24_CRC_16);           // 16-bit CRC checksum
+    radio.setPayloadSize(sizeof(RadioPacket)); // Exact payload size (24 bytes) match
     radio.openReadingPipe(1, RADIO_PIPE_ADDRESS);
-    radio.startListening();                  // Set as receiver - ALWAYS LISTENING
+    radio.startListening();                     // Set as receiver - ALWAYS LISTENING
 
     return true;
 }
 
 inline bool receiveBoatData(RadioPacket *receivedPacket)
 {
-    bool packetFound = false;
-
-    // Read all available packets from FIFO so newest is processed
     while (radio.available())
     {
         RadioPacket tempPacket;
         radio.read(&tempPacket, sizeof(RadioPacket));
 
-        // Validate packet identifier
+        // Validate packet magic identifier
         if (tempPacket.magic == RADIO_PACKET_MAGIC)
         {
             tempPacket.boatId[sizeof(tempPacket.boatId) - 1] = '\0';
             *receivedPacket = tempPacket;
-            packetFound = true;
+            return true;
         }
     }
 
-    return packetFound;
+    return false;
 }
 
 #endif

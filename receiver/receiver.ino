@@ -41,7 +41,7 @@ inline void setAlertLedState(bool turnOn)
 
 void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
 {
-    // Silent and LED OFF if no active issue or boat is in safe waters
+    // Silent and LED OFF if no active alert or boat is in safe waters
     if (!alertActive || warningLevel == WARNING_SAFE)
     {
         setBuzzerState(false);
@@ -88,13 +88,6 @@ void setup()
     setBuzzerState(false);
     setAlertLedState(false);
 
-    // Short boot chirp & LED flash
-    setBuzzerState(true);
-    setAlertLedState(true);
-    delay(80);
-    setBuzzerState(false);
-    setAlertLedState(false);
-
     Serial.begin(115200);
     delay(200);
     Serial.println();
@@ -117,7 +110,9 @@ void setup()
 
     if (radioIsReady)
     {
-        Serial.println("[OK] nRF24L01+ receiver ready on Channel 108 (ALWAYS LISTENING)");
+        Serial.print("[OK] nRF24L01+ receiver ready on Channel ");
+        Serial.print(NRF_CHANNEL);
+        Serial.println(" (ALWAYS LISTENING)");
     }
     else
     {
@@ -145,7 +140,7 @@ void loop()
 
     bool freshPacketReceived = false;
 
-    // Check continuously if an issue packet arrived from the boat
+    // Check continuously if packet arrived from the boat
     if (radioIsReady && receiveBoatData(&latestRadioPacket))
     {
         freshPacketReceived = true;
@@ -155,35 +150,52 @@ void loop()
         // Reset rotation so fresh incoming data starts on Screen 1 immediately
         resetDisplayToFirstScreen();
 
-        Serial.print("[ALERT RX #");
-        Serial.print(latestRadioPacket.seqNumber);
-        Serial.print("] Boat: ");
-        Serial.print(latestRadioPacket.boatId);
-        Serial.print(" | Lat: ");
-        Serial.print(latestRadioPacket.latitude, 6);
-        Serial.print(" | Lon: ");
-        Serial.print(latestRadioPacket.longitude, 6);
-        Serial.print(" | Dist: ");
-        Serial.print(latestRadioPacket.distanceMeters, 0);
-        Serial.print("m | Status: ");
-        Serial.print(getReceivedWarningLabel(latestRadioPacket.warningLevel));
-        Serial.print(" | Side: ");
-        Serial.println(getReceivedBoundarySideLabel(latestRadioPacket.boundarySide));
+        if (hasActiveAlert)
+        {
+            Serial.print("[ALERT RX #");
+            Serial.print(latestRadioPacket.seqNumber);
+            Serial.print("] Boat: ");
+            Serial.print(latestRadioPacket.boatId);
+            Serial.print(" | Lat: ");
+            Serial.print(latestRadioPacket.latitude, 6);
+            Serial.print(" | Lon: ");
+            Serial.print(latestRadioPacket.longitude, 6);
+            Serial.print(" | Dist: ");
+            Serial.print(latestRadioPacket.distanceMeters, 0);
+            Serial.print("m | Status: ");
+            Serial.print(getReceivedWarningLabel(latestRadioPacket.warningLevel));
+            Serial.print(" | Side: ");
+            Serial.println(getReceivedBoundarySideLabel(latestRadioPacket.boundarySide));
+        }
+        else
+        {
+            Serial.print("[RX #");
+            Serial.print(latestRadioPacket.seqNumber);
+            Serial.print("] Boat: ");
+            Serial.print(latestRadioPacket.boatId);
+            Serial.print(" | Lat: ");
+            Serial.print(latestRadioPacket.latitude, 6);
+            Serial.print(" | Lon: ");
+            Serial.print(latestRadioPacket.longitude, 6);
+            Serial.print(" | Dist: ");
+            Serial.print(latestRadioPacket.distanceMeters, 0);
+            Serial.println("m | Status: SAFE");
+        }
     }
 
-    // If no alert packet is received for 35s, clear the alert
+    // If no alert packet is received for 10s, clear the alert
     if (hasActiveAlert && (millis() - lastPacketReceivedMillis > PACKET_TIMEOUT_MS))
     {
         hasActiveAlert = false;
         latestRadioPacket.warningLevel = WARNING_SAFE;
         freshPacketReceived = true;
-        Serial.println("[INFO] Alert cleared - boat is either safe or out of range.");
+        Serial.println("[INFO] Alert cleared - boat returned to safe waters or timed out.");
     }
 
-    // Sound buzzer if active issue
+    // Sound buzzer and flash LED only if active issue
     updateCoastGuardBuzzer(latestRadioPacket.warningLevel, hasActiveAlert);
 
-    // Update 16x2 LCD display (loops Screen 1 and Screen 2 every 3.5s)
+    // Update 16x2 LCD display (loops Screen 1 and Screen 2 every 3.5s during alert)
     if (displayIsReady)
     {
         showBoatData(latestRadioPacket, hasActiveAlert, freshPacketReceived);

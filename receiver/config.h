@@ -16,14 +16,14 @@ const uint8_t LCD_COLS = 16;
 const uint8_t LCD_ROWS = 2;
 
 // Active Buzzer Connection
-// Connect Buzzer (+) to D4, (-) to GND
+// Connect Buzzer (+) to D4, (-) to GND -> Active HIGH (false)
 const int BUZZER_PIN = 2;             // NodeMCU D4 (GPIO 2)
-const bool BUZZER_ACTIVE_LOW = true;  // Active-LOW logic: silences buzzer in SAFE mode, beeps on alert
+const bool BUZZER_ACTIVE_LOW = false; // Set to false: LOW=Silent, HIGH=Beep (Buzzer + on D4, - on GND)
 
 // Alert LED Connection
-// Connect LED Anode (+) through a 220Ω-330Ω resistor to D3, Cathode (-) to GND
+// Connect LED Anode (+) through 220Ω-330Ω resistor to D3, Cathode (-) to GND
 const int ALERT_LED_PIN = 0;          // NodeMCU D3 (GPIO 0)
-const bool ALERT_LED_ACTIVE_LOW = false; // Set to true if LED is wired Active-LOW (Anode to 3.3V)
+const bool ALERT_LED_ACTIVE_LOW = false; // Set to false: LOW=OFF, HIGH=ON (LED + on D3, - on GND)
 
 // nRF24L01+ Radio Connections (SPI)
 // Connect nRF24 VCC to 3.3V (3V3) ONLY! GND to GND
@@ -37,8 +37,8 @@ const int NRF_CE_PIN   = 16;          // NodeMCU D0 (GPIO 16)
 // ==========================================
 // nRF24L01+ Global Radio Settings (Matches Boat)
 // ==========================================
-const uint8_t NRF_CHANNEL = 108;      // 2508 MHz (avoids 2.4GHz WiFi interference)
-const uint64_t RADIO_PIPE_ADDRESS = 0xF0F0F0F0E1LL; // 5-byte RF pipe address
+const uint8_t NRF_CHANNEL = 76;                      // 2476 MHz (Universal RF24 channel, clean & antenna resonant)
+const uint8_t RADIO_PIPE_ADDRESS[6] = "AQSH1";       // 5-byte RF pipe address
 const unsigned long RADIO_PACKET_MAGIC = 0x41515348UL;   // 'AQSH'
 const bool NRF_ENABLE_AUTO_ACK = false;                  // Broadcast mode: eliminates "no ACK" issues
 
@@ -53,10 +53,9 @@ const bool NRF_ENABLE_AUTO_ACK = false;                  // Broadcast mode: elim
 #define BOUNDARY_SIDE_ON_BOUNDARY 2
 
 // Timings
-const unsigned long PACKET_TIMEOUT_MS         = 35000; // Reset alert if no new issue received for 35 seconds
+const unsigned long PACKET_TIMEOUT_MS         = 10000; // Reset alert if no packet received for 10 seconds
 const unsigned long SCREEN_SWITCH_INTERVAL_MS = 3500;  // Alternate between Screen 1 and Screen 2 every 3.5s
 const unsigned long CAUTION_BEEP_INTERVAL_MS  = 400;   // 400ms ON / 400ms OFF
 const unsigned long DANGER_BEEP_INTERVAL_MS   = 150;   // 150ms ON / 150ms OFF
-
 
 #endif
