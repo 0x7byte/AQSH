@@ -16,9 +16,8 @@ const uint8_t LCD_COLS = 16;
 const uint8_t LCD_ROWS = 2;
 
 // Active Buzzer Connection
-// Connect Buzzer (+) to D0, (-) to GND
-// D0 (GPIO 16) is chosen because it never conflicts with ESP8266 boot-mode strapping
-const int BUZZER_PIN = 16;            // NodeMCU D0 (GPIO 16)
+// Connect Buzzer (+) to D4, (-) to GND
+const int BUZZER_PIN = 2;             // NodeMCU D4 (GPIO 2)
 
 // Alert LED Connection
 // Connect LED Anode (+) through a 220Ω-330Ω resistor to D3, Cathode (-) to GND
@@ -31,7 +30,7 @@ const int NRF_SCK_PIN  = 14;          // NodeMCU D5 (GPIO 14)
 const int NRF_MISO_PIN = 12;          // NodeMCU D6 (GPIO 12)
 const int NRF_MOSI_PIN = 13;          // NodeMCU D7 (GPIO 13)
 const int NRF_CSN_PIN  = 15;          // NodeMCU D8 (GPIO 15)
-const int NRF_CE_PIN   = 2;           // NodeMCU D4 (GPIO 2)
+const int NRF_CE_PIN   = 16;          // NodeMCU D0 (GPIO 16)
 
 // ==========================================
 // nRF24L01+ Global Radio Settings (Matches Boat)

@@ -17,11 +17,10 @@ bool buzzerIsOn = false;
 
 void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
 {
-    // Silent and LED OFF if no active issue or boat is in safe waters
+    // Silent if no active issue or boat is in safe waters
     if (!alertActive || warningLevel == WARNING_SAFE)
     {
         digitalWrite(BUZZER_PIN, LOW);
-        digitalWrite(ALERT_LED_PIN, LOW);
         buzzerIsOn = false;
         return;
     }
@@ -36,7 +35,6 @@ void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
             lastBuzzerToggleMillis = currentMillis;
             buzzerIsOn = !buzzerIsOn;
             digitalWrite(BUZZER_PIN, buzzerIsOn ? HIGH : LOW);
-            digitalWrite(ALERT_LED_PIN, buzzerIsOn ? HIGH : LOW);
         }
     }
     else if (warningLevel == WARNING_CAUTION)
@@ -47,7 +45,6 @@ void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
             lastBuzzerToggleMillis = currentMillis;
             buzzerIsOn = !buzzerIsOn;
             digitalWrite(BUZZER_PIN, buzzerIsOn ? HIGH : LOW);
-            digitalWrite(ALERT_LED_PIN, buzzerIsOn ? HIGH : LOW);
         }
     }
 }
@@ -58,18 +55,14 @@ void setup()
     WiFi.mode(WIFI_OFF);
     WiFi.forceSleepBegin();
 
-    // Initialize active buzzer on D0 (GPIO 16) and Alert LED on D3 (GPIO 0)
+    // Initialize active buzzer on D0 (GPIO 16)
     pinMode(BUZZER_PIN, OUTPUT);
-    pinMode(ALERT_LED_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);
-    digitalWrite(ALERT_LED_PIN, LOW);
 
-    // Short boot chirp & LED flash
+    // Short boot chirp
     digitalWrite(BUZZER_PIN, HIGH);
-    digitalWrite(ALERT_LED_PIN, HIGH);
     delay(80);
     digitalWrite(BUZZER_PIN, LOW);
-    digitalWrite(ALERT_LED_PIN, LOW);
 
     Serial.begin(115200);
     delay(200);
