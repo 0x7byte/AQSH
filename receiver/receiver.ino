@@ -15,13 +15,30 @@ unsigned long lastRadioRetryMillis = 0;
 unsigned long lastBuzzerToggleMillis = 0;
 bool buzzerIsOn = false;
 
+inline void setBuzzerState(bool turnOn)
+{
+    if (BUZZER_ACTIVE_LOW)
+    {
+        digitalWrite(BUZZER_PIN, turnOn ? LOW : HIGH);
+    }
+    else
+    {
+        digitalWrite(BUZZER_PIN, turnOn ? HIGH : LOW);
+    }
+}
+
+inline void setAlertLedState(bool turnOn)
+{
+    digitalWrite(ALERT_LED_PIN, turnOn ? HIGH : LOW);
+}
+
 void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
 {
     // Silent and LED OFF if no active issue or boat is in safe waters
     if (!alertActive || warningLevel == WARNING_SAFE)
     {
-        digitalWrite(BUZZER_PIN, LOW);
-        digitalWrite(ALERT_LED_PIN, LOW);
+        setBuzzerState(false);
+        setAlertLedState(false);
         buzzerIsOn = false;
         return;
     }
@@ -35,8 +52,8 @@ void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
         {
             lastBuzzerToggleMillis = currentMillis;
             buzzerIsOn = !buzzerIsOn;
-            digitalWrite(BUZZER_PIN, buzzerIsOn ? HIGH : LOW);
-            digitalWrite(ALERT_LED_PIN, buzzerIsOn ? HIGH : LOW);
+            setBuzzerState(buzzerIsOn);
+            setAlertLedState(buzzerIsOn);
         }
     }
     else if (warningLevel == WARNING_CAUTION)
@@ -46,8 +63,8 @@ void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
         {
             lastBuzzerToggleMillis = currentMillis;
             buzzerIsOn = !buzzerIsOn;
-            digitalWrite(BUZZER_PIN, buzzerIsOn ? HIGH : LOW);
-            digitalWrite(ALERT_LED_PIN, buzzerIsOn ? HIGH : LOW);
+            setBuzzerState(buzzerIsOn);
+            setAlertLedState(buzzerIsOn);
         }
     }
 }
@@ -61,15 +78,15 @@ void setup()
     // Initialize active buzzer on D4 (GPIO 2) and Alert LED on D3 (GPIO 0)
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(ALERT_LED_PIN, OUTPUT);
-    digitalWrite(BUZZER_PIN, LOW);
-    digitalWrite(ALERT_LED_PIN, LOW);
+    setBuzzerState(false);
+    setAlertLedState(false);
 
     // Short boot chirp & LED flash
-    digitalWrite(BUZZER_PIN, HIGH);
-    digitalWrite(ALERT_LED_PIN, HIGH);
+    setBuzzerState(true);
+    setAlertLedState(true);
     delay(80);
-    digitalWrite(BUZZER_PIN, LOW);
-    digitalWrite(ALERT_LED_PIN, LOW);
+    setBuzzerState(false);
+    setAlertLedState(false);
 
     Serial.begin(115200);
     delay(200);

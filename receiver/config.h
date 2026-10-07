@@ -18,6 +18,7 @@ const uint8_t LCD_ROWS = 2;
 // Active Buzzer Connection
 // Connect Buzzer (+) to D4, (-) to GND
 const int BUZZER_PIN = 2;             // NodeMCU D4 (GPIO 2)
+const bool BUZZER_ACTIVE_LOW = false; // Set to true if buzzer module is Active-LOW (beeps on LOW)
 
 // Alert LED Connection
 // Connect LED Anode (+) through a 220Ω-330Ω resistor to D3, Cathode (-) to GND
