@@ -29,7 +29,14 @@ inline void setBuzzerState(bool turnOn)
 
 inline void setAlertLedState(bool turnOn)
 {
-    digitalWrite(ALERT_LED_PIN, turnOn ? HIGH : LOW);
+    if (ALERT_LED_ACTIVE_LOW)
+    {
+        digitalWrite(ALERT_LED_PIN, turnOn ? LOW : HIGH);
+    }
+    else
+    {
+        digitalWrite(ALERT_LED_PIN, turnOn ? HIGH : LOW);
+    }
 }
 
 void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
