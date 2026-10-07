@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
 #include "config.h"
 #include "radio.h"
 #include "display.h"
@@ -8,6 +9,7 @@ bool displayIsReady = false;
 bool radioIsReady = false;
 bool hasActiveAlert = false;
 unsigned long lastPacketReceivedMillis = 0;
+unsigned long lastRadioRetryMillis = 0;
 
 // Non-blocking buzzer state
 unsigned long lastBuzzerToggleMillis = 0;
@@ -49,6 +51,10 @@ void updateCoastGuardBuzzer(uint8_t warningLevel, bool alertActive)
 
 void setup()
 {
+    // Turn off ESP8266 WiFi completely to stop 2.4 GHz RF interference with nRF24L01+
+    WiFi.mode(WIFI_OFF);
+    WiFi.forceSleepBegin();
+
     // Initialize active buzzer on D0 (GPIO 16)
     pinMode(BUZZER_PIN, OUTPUT);
     digitalWrite(BUZZER_PIN, LOW);
@@ -63,7 +69,7 @@ void setup()
     Serial.println();
     Serial.println("==================================================");
     Serial.println("   AquaShield - Coast Guard Base Station          ");
-    Serial.println("   NodeMCU ESP8266 + nRF24L01 + 16x2 I2C LCD     ");
+    Serial.println("   NodeMCU ESP8266 + nRF24L01 (ALWAYS ACTIVE)    ");
     Serial.println("==================================================");
 
     displayIsReady = startDisplay();
@@ -71,7 +77,7 @@ void setup()
 
     if (displayIsReady)
     {
-        Serial.println("[OK] 16x2 I2C LCD ready (Address 0x27)");
+        Serial.println("[OK] 16x2 I2C LCD ready");
     }
     else
     {
@@ -80,7 +86,7 @@ void setup()
 
     if (radioIsReady)
     {
-        Serial.println("[OK] nRF24L01+ receiver ready on Channel 108");
+        Serial.println("[OK] nRF24L01+ receiver ready on Channel 108 (ALWAYS LISTENING)");
     }
     else
     {
@@ -90,9 +96,28 @@ void setup()
 
 void loop()
 {
-    // Check if a new issue packet arrived from the boat
+    // Auto-reconnect nRF24 if disconnected or failed on boot
+    if (!radioIsReady)
+    {
+        unsigned long currentMillis = millis();
+        if (currentMillis - lastRadioRetryMillis >= 2000)
+        {
+            lastRadioRetryMillis = currentMillis;
+            Serial.println("[RETRY] Initializing nRF24L01+ receiver...");
+            radioIsReady = startCoastGuardRadio();
+            if (radioIsReady)
+            {
+                Serial.println("[OK] nRF24L01+ receiver recovered and now ALWAYS LISTENING!");
+            }
+        }
+    }
+
+    bool freshPacketReceived = false;
+
+    // Check continuously if an issue packet arrived from the boat
     if (radioIsReady && receiveBoatData(&latestRadioPacket))
     {
+        freshPacketReceived = true;
         lastPacketReceivedMillis = millis();
         hasActiveAlert = (latestRadioPacket.warningLevel != WARNING_SAFE);
 
@@ -120,6 +145,7 @@ void loop()
     {
         hasActiveAlert = false;
         latestRadioPacket.warningLevel = WARNING_SAFE;
+        freshPacketReceived = true;
         Serial.println("[INFO] Alert cleared - boat is either safe or out of range.");
     }
 
@@ -129,8 +155,10 @@ void loop()
     // Update 16x2 LCD display (loops Screen 1 and Screen 2 every 3.5s)
     if (displayIsReady)
     {
-        showBoatData(latestRadioPacket, hasActiveAlert);
+        showBoatData(latestRadioPacket, hasActiveAlert, freshPacketReceived);
     }
 
-    delay(20);
+    // High speed non-blocking loop: keeps nRF24 constantly polling at maximum rate
+    yield();
+    delay(2);
 }

@@ -45,10 +45,11 @@ inline bool startBoatRadio()
     }
 
     radio.setChannel(NRF_CHANNEL);
-    radio.setDataRate(RF24_250KBPS);
-    radio.setPALevel(RF24_PA_LOW);
+    radio.setDataRate(RF24_1MBPS);   // 1Mbps is universal for genuine and clone nRF24 chips
+    radio.setPALevel(RF24_PA_HIGH);  // High power for strong signal
+    radio.setAutoAck(false);         // Broadcast mode - guarantees instant transmit without waiting for ACK
     radio.openWritingPipe(RADIO_PIPE_ADDRESS);
-    radio.stopListening(); // Transmit mode
+    radio.stopListening();           // Transmit mode
 
     return true;
 }
@@ -69,7 +70,18 @@ inline bool sendBoatData(float latitude, float longitude, float minimumDistance,
     radioPacket.boundarySide = (uint8_t)boundarySide;
     radioPacket.seqNumber = boatPacketSeq;
 
-    return radio.write(&radioPacket, sizeof(RadioPacket));
+    // Send 3 quick bursts (15ms apart) so the receiver never misses a packet
+    bool sent = false;
+    for (int i = 0; i < 3; i++)
+    {
+        if (radio.write(&radioPacket, sizeof(RadioPacket)))
+        {
+            sent = true;
+        }
+        delay(15);
+    }
+
+    return sent;
 }
 
 #endif

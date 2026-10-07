@@ -98,7 +98,7 @@ void loop()
                 }
                 else
                 {
-                    Serial.println("[ERROR] Radio transmission failed (no ACK). Check Receiver.");
+                    Serial.println("[ERROR] Radio transmission failed. Check nRF24 module.");
                 }
             }
             else

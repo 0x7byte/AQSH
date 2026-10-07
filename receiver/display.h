@@ -24,7 +24,7 @@ inline void padAndPrintLcd(uint8_t row, String text)
         text = text.substring(0, LCD_COLS);
     }
     lcd.setCursor(0, row);
-    lcd.print(text);
+    lcd.print(text.c_str());
 }
 
 inline bool startDisplay()
@@ -34,7 +34,7 @@ inline bool startDisplay()
 
     // Verify I2C device presence
     Wire.beginTransmission(LCD_I2C_ADDRESS);
-    byte error = Wire.endTransmission();
+    uint8_t error = Wire.endTransmission();
     if (error != 0)
     {
         Serial.print("[I2C WARNING] No LCD found at 0x");
@@ -86,22 +86,45 @@ inline void resetDisplayToFirstScreen()
     lastDisplayRotateMillis = millis();
 }
 
-inline void showBoatData(const RadioPacket &packet, bool hasActiveAlert)
+static int lastRenderedScreen = -1;
+static bool lastRenderedAlert = false;
+static uint16_t lastRenderedSeq = 0xFFFF;
+
+inline void showBoatData(const RadioPacket &packet, bool hasActiveAlert, bool forceRefresh = false)
 {
     // If no active issue has been received, display normal standby screen
     if (!hasActiveAlert)
     {
-        showNoAlertScreen();
+        if (lastRenderedAlert != false || lastRenderedScreen != -1 || forceRefresh)
+        {
+            showNoAlertScreen();
+            lastRenderedAlert = false;
+            lastRenderedScreen = -1;
+            lastRenderedSeq = 0xFFFF;
+        }
         return;
     }
 
     // Rotate between Screen 0 and Screen 1 in a loop until new data arrives
     unsigned long currentMillis = millis();
+    bool screenRotated = false;
     if (currentMillis - lastDisplayRotateMillis >= SCREEN_SWITCH_INTERVAL_MS)
     {
         lastDisplayRotateMillis = currentMillis;
         displayScreenIndex = (displayScreenIndex + 1) % 2; // Loops between 0 and 1
+        screenRotated = true;
     }
+
+    // Only update LCD if screen rotated, new packet arrived, or state changed
+    if (!screenRotated && lastRenderedScreen == displayScreenIndex &&
+        lastRenderedAlert == hasActiveAlert && lastRenderedSeq == packet.seqNumber && !forceRefresh)
+    {
+        return;
+    }
+
+    lastRenderedScreen = displayScreenIndex;
+    lastRenderedAlert = hasActiveAlert;
+    lastRenderedSeq = packet.seqNumber;
 
     if (displayScreenIndex == 0)
     {
