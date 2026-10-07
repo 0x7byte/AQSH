@@ -20,6 +20,10 @@ const uint8_t LCD_ROWS = 2;
 // D0 (GPIO 16) is chosen because it never conflicts with ESP8266 boot-mode strapping
 const int BUZZER_PIN = 16;            // NodeMCU D0 (GPIO 16)
 
+// Alert LED Connection
+// Connect LED Anode (+) through a 220Ω-330Ω resistor to D3, Cathode (-) to GND
+const int ALERT_LED_PIN = 0;          // NodeMCU D3 (GPIO 0)
+
 // nRF24L01+ Radio Connections (SPI)
 // Connect nRF24 VCC to 3.3V (3V3) ONLY! GND to GND
 // Hardware HSPI: SCK=D5(14), MISO=D6(12), MOSI=D7(13)
