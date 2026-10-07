@@ -45,11 +45,11 @@ inline bool startBoatRadio()
     }
 
     radio.setChannel(NRF_CHANNEL);
-    radio.setDataRate(RF24_1MBPS);   // 1Mbps is universal for genuine and clone nRF24 chips
-    radio.setPALevel(RF24_PA_HIGH);  // High power for strong signal
-    radio.setAutoAck(false);         // Broadcast mode - guarantees instant transmit without waiting for ACK
+    radio.setDataRate(RF24_1MBPS);           // 1Mbps is universal for genuine and clone nRF24 chips
+    radio.setPALevel(RF24_PA_HIGH);          // High power for strong signal
+    radio.setAutoAck(NRF_ENABLE_AUTO_ACK);   // Broadcast mode - guarantees instant transmit without waiting for ACK
     radio.openWritingPipe(RADIO_PIPE_ADDRESS);
-    radio.stopListening();           // Transmit mode
+    radio.stopListening();                   // Transmit mode
 
     return true;
 }

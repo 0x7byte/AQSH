@@ -30,11 +30,12 @@ const int NRF_CSN_PIN  = 15;          // NodeMCU D8 (GPIO 15)
 const int NRF_CE_PIN   = 2;           // NodeMCU D4 (GPIO 2)
 
 // ==========================================
-// nRF24L01+ Radio Settings (Matches Boat)
+// nRF24L01+ Global Radio Settings (Matches Boat)
 // ==========================================
 const uint8_t NRF_CHANNEL = 108;      // 2508 MHz (avoids 2.4GHz WiFi interference)
 const uint64_t RADIO_PIPE_ADDRESS = 0xF0F0F0F0E1LL; // 5-byte RF pipe address
 const unsigned long RADIO_PACKET_MAGIC = 0x41515348UL;   // 'AQSH'
+const bool NRF_ENABLE_AUTO_ACK = false;                  // Broadcast mode: eliminates "no ACK" issues
 
 // Warning levels
 #define WARNING_SAFE 0

@@ -67,11 +67,11 @@ inline bool startCoastGuardRadio()
     }
 
     radio.setChannel(NRF_CHANNEL);
-    radio.setDataRate(RF24_1MBPS);   // 1Mbps universal speed
-    radio.setPALevel(RF24_PA_HIGH);  // High power reception
-    radio.setAutoAck(false);         // Match broadcast mode
+    radio.setDataRate(RF24_1MBPS);           // 1Mbps universal speed
+    radio.setPALevel(RF24_PA_HIGH);          // High power reception
+    radio.setAutoAck(NRF_ENABLE_AUTO_ACK);   // Match broadcast mode
     radio.openReadingPipe(1, RADIO_PIPE_ADDRESS);
-    radio.startListening();          // Set as receiver - ALWAYS LISTENING
+    radio.startListening();                  // Set as receiver - ALWAYS LISTENING
 
     return true;
 }

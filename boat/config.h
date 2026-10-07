@@ -22,10 +22,11 @@ const int NRF_MOSI_PIN = 23;
 const int NRF_CSN_PIN  = 5;
 const int NRF_CE_PIN   = 4;
 
-// nRF24L01+ radio settings (2.4 GHz)
+// nRF24L01+ Global Radio settings (Universal for all genuine & clone chips)
 const uint8_t NRF_CHANNEL = 108;                     // 2508 MHz (avoids 2.4GHz WiFi channels)
 const uint64_t RADIO_PIPE_ADDRESS = 0xF0F0F0F0E1LL; // 5-byte address pipe
 const unsigned long RADIO_PACKET_MAGIC = 0x41515348UL;
+const bool NRF_ENABLE_AUTO_ACK = false;              // Broadcast mode: eliminates "no ACK" issues
 
 // Timing values used by the boat simulation and warning outputs
 const unsigned long SIMULATION_INTERVAL_MS = 15000; // New simulated GPS point every 15 seconds
