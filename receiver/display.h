@@ -11,7 +11,7 @@
 LiquidCrystal_I2C lcd(LCD_I2C_ADDRESS, LCD_COLS, LCD_ROWS);
 
 unsigned long lastDisplayRotateMillis = 0;
-int displayScreenIndex = 0; // 0: Coordinates & Danger, 1: Distance from border & Side
+int displayScreenIndex = 0; // 0: Coordinates (Lat/Lon), 1: Danger & Distance from border (and Side)
 
 inline void padAndPrintLcd(uint8_t row, String text)
 {
@@ -62,22 +62,16 @@ inline bool startDisplay()
     lcd.clear();
 
     padAndPrintLcd(0, "AquaShield pro");
-    padAndPrintLcd(1, "All Boats Safe");
+    padAndPrintLcd(1, "Waiting Boat...");
     delay(1000);
 
     return (error == 0);
 }
 
-inline void showNoAlertScreen()
+inline void showWaitingScreen()
 {
     padAndPrintLcd(0, "AquaShield pro");
-    padAndPrintLcd(1, "All Boats Safe");
-}
-
-inline void showSignalLost()
-{
-    padAndPrintLcd(0, "AquaShield pro");
-    padAndPrintLcd(1, "No Alert Active");
+    padAndPrintLcd(1, "Waiting Boat...");
 }
 
 inline void resetDisplayToFirstScreen()
@@ -87,25 +81,23 @@ inline void resetDisplayToFirstScreen()
 }
 
 static int lastRenderedScreen = -1;
-static bool lastRenderedAlert = false;
 static uint16_t lastRenderedSeq = 0xFFFF;
+static uint8_t lastRenderedWarn = 0xFF;
 
-inline void showBoatData(const RadioPacket &packet, bool hasActiveAlert, bool forceRefresh = false)
+inline void showBoatData(const RadioPacket &packet, bool packetValid, bool forceRefresh = false)
 {
-    // If no active issue has been received, display normal standby screen
-    if (!hasActiveAlert)
+    if (!packetValid)
     {
-        if (lastRenderedAlert != false || lastRenderedScreen != -1 || forceRefresh)
+        if (lastRenderedScreen != -1 || forceRefresh)
         {
-            showNoAlertScreen();
-            lastRenderedAlert = false;
+            showWaitingScreen();
             lastRenderedScreen = -1;
             lastRenderedSeq = 0xFFFF;
         }
         return;
     }
 
-    // Rotate between Screen 0 and Screen 1 in a loop until new data arrives
+    // Rotate between Screen 0 and Screen 1 every SCREEN_SWITCH_INTERVAL_MS (3.75 seconds)
     unsigned long currentMillis = millis();
     bool screenRotated = false;
     if (currentMillis - lastDisplayRotateMillis >= SCREEN_SWITCH_INTERVAL_MS)
@@ -115,27 +107,36 @@ inline void showBoatData(const RadioPacket &packet, bool hasActiveAlert, bool fo
         screenRotated = true;
     }
 
-    // Only update LCD if screen rotated, new packet arrived, or state changed
+    // Only update LCD if screen rotated, new packet arrived, or forced refresh
     if (!screenRotated && lastRenderedScreen == displayScreenIndex &&
-        lastRenderedAlert == hasActiveAlert && lastRenderedSeq == packet.seqNumber && !forceRefresh)
+        lastRenderedSeq == packet.seqNumber && lastRenderedWarn == packet.warningLevel && !forceRefresh)
     {
         return;
     }
 
     lastRenderedScreen = displayScreenIndex;
-    lastRenderedAlert = hasActiveAlert;
     lastRenderedSeq = packet.seqNumber;
+    lastRenderedWarn = packet.warningLevel;
 
     if (displayScreenIndex == 0)
     {
         // -------------------------------------------------------------
-        // Screen 1:
-        // Line 1: X, Y Coordinate (Lat/Lon)
-        // Line 2: Danger / Alert level
+        // Screen 1 (3.75s):
+        // Line 1: Lat: 20.681000
+        // Line 2: Lon: 92.365600
         // -------------------------------------------------------------
-        String coordStr = "X:" + String(packet.latitude, 3) + " Y:" + String(packet.longitude, 2);
-        padAndPrintLcd(0, coordStr);
-
+        String latStr = "Lat: " + String(packet.latitude, 6);
+        String lonStr = "Lon: " + String(packet.longitude, 6);
+        padAndPrintLcd(0, latStr);
+        padAndPrintLcd(1, lonStr);
+    }
+    else
+    {
+        // -------------------------------------------------------------
+        // Screen 2 (3.75s):
+        // Line 1: Danger level (ALERT: DANGER! / ALERT: WARNING / STATUS: SAFE)
+        // Line 2: Distance from border & Side (Dist: 850m (BD))
+        // -------------------------------------------------------------
         String dangerStr;
         if (packet.warningLevel == WARNING_DANGER)
         {
@@ -149,32 +150,28 @@ inline void showBoatData(const RadioPacket &packet, bool hasActiveAlert, bool fo
         {
             dangerStr = "STATUS: SAFE";
         }
-        padAndPrintLcd(1, dangerStr);
-    }
-    else
-    {
-        // -------------------------------------------------------------
-        // Screen 2:
-        // Line 1: Distance from border
-        // Line 2: Which side the boat is
-        // -------------------------------------------------------------
-        String distStr = "Border: " + String((int)packet.distanceMeters) + " m";
-        padAndPrintLcd(0, distStr);
+        padAndPrintLcd(0, dangerStr);
 
-        String sideStr;
+        String sideTag;
         if (packet.boundarySide == BOUNDARY_SIDE_BANGLADESH)
         {
-            sideStr = "Side:BANGLADESH";
+            sideTag = "(BD)";
         }
         else if (packet.boundarySide == BOUNDARY_SIDE_ON_BOUNDARY)
         {
-            sideStr = "Side: ON BORDER";
+            sideTag = "(BORDER)";
         }
         else
         {
-            sideStr = "Side: OTHER SEA";
+            sideTag = "(OTHER)";
         }
-        padAndPrintLcd(1, sideStr);
+
+        String distStr = "Dist: " + String((int)packet.distanceMeters) + "m " + sideTag;
+        if (distStr.length() > LCD_COLS)
+        {
+            distStr = "D:" + String((int)packet.distanceMeters) + "m " + sideTag;
+        }
+        padAndPrintLcd(1, distStr);
     }
 }
 

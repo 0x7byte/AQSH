@@ -8,6 +8,7 @@ RadioPacket latestRadioPacket;
 bool displayIsReady = false;
 bool radioIsReady = false;
 bool hasActiveAlert = false;
+bool hasReceivedPacketOnce = false;
 unsigned long lastPacketReceivedMillis = 0;
 unsigned long lastRadioRetryMillis = 0;
 
@@ -144,11 +145,9 @@ void loop()
     if (radioIsReady && receiveBoatData(&latestRadioPacket))
     {
         freshPacketReceived = true;
+        hasReceivedPacketOnce = true;
         lastPacketReceivedMillis = millis();
         hasActiveAlert = (latestRadioPacket.warningLevel != WARNING_SAFE);
-
-        // Reset rotation so fresh incoming data starts on Screen 1 immediately
-        resetDisplayToFirstScreen();
 
         if (hasActiveAlert)
         {
@@ -179,7 +178,8 @@ void loop()
             Serial.print(latestRadioPacket.longitude, 6);
             Serial.print(" | Dist: ");
             Serial.print(latestRadioPacket.distanceMeters, 0);
-            Serial.println("m | Status: SAFE");
+            Serial.print("m | Status: SAFE | Side: ");
+            Serial.println(getReceivedBoundarySideLabel(latestRadioPacket.boundarySide));
         }
     }
 
@@ -195,10 +195,10 @@ void loop()
     // Sound buzzer and flash LED only if active issue
     updateCoastGuardBuzzer(latestRadioPacket.warningLevel, hasActiveAlert);
 
-    // Update 16x2 LCD display (loops Screen 1 and Screen 2 every 3.5s during alert)
+    // Update 16x2 LCD display (loops Screen 1 and Screen 2 every 3.75s)
     if (displayIsReady)
     {
-        showBoatData(latestRadioPacket, hasActiveAlert, freshPacketReceived);
+        showBoatData(latestRadioPacket, hasReceivedPacketOnce, freshPacketReceived);
     }
 
     // High speed non-blocking loop: keeps nRF24 constantly polling at maximum rate

@@ -54,7 +54,7 @@ const bool NRF_ENABLE_AUTO_ACK = false;                  // Broadcast mode: elim
 
 // Timings
 const unsigned long PACKET_TIMEOUT_MS         = 10000; // Reset alert if no packet received for 10 seconds
-const unsigned long SCREEN_SWITCH_INTERVAL_MS = 3500;  // Alternate between Screen 1 and Screen 2 every 3.5s
+const unsigned long SCREEN_SWITCH_INTERVAL_MS = 3750;  // Switch screen every 3.75s (4 cycles = 15s GPS update)
 const unsigned long CAUTION_BEEP_INTERVAL_MS  = 400;   // 400ms ON / 400ms OFF
 const unsigned long DANGER_BEEP_INTERVAL_MS   = 150;   // 150ms ON / 150ms OFF
 

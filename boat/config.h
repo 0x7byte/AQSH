@@ -29,10 +29,10 @@ const unsigned long RADIO_PACKET_MAGIC = 0x41515348UL;
 const bool NRF_ENABLE_AUTO_ACK = false;              // Broadcast mode: eliminates "no ACK" issues
 
 // Timing values used by the boat simulation and warning outputs
-const unsigned long SIMULATION_INTERVAL_MS = 15000; // New simulated GPS point every 15 seconds
-const unsigned long RADIO_SEND_INTERVAL_MS = 2000;  // Telemetry broadcast interval: every 2 seconds continuous
-const unsigned long SLOW_WARNING_INTERVAL_MS = 500;
-const unsigned long FAST_WARNING_INTERVAL_MS = 150;
+const unsigned long SIMULATION_INTERVAL_MS = 15000;  // New simulated GPS point every 15 seconds
+const unsigned long RADIO_SEND_INTERVAL_MS = 2000;   // Telemetry broadcast interval: every 2 seconds continuous
+const unsigned long CAUTION_BEEP_INTERVAL_MS = 400;  // 400ms ON / 400ms OFF (matches receiver)
+const unsigned long DANGER_BEEP_INTERVAL_MS = 150;   // 150ms ON / 150ms OFF (matches receiver)
 
 // Warning distances in metres
 const float WARNING_DISTANCE_METERS = 2000.0;
@@ -47,7 +47,10 @@ const float DANGER_DISTANCE_METERS = 1000.0;
 #define BOUNDARY_SIDE_BANGLADESH 0
 #define BOUNDARY_SIDE_OTHER 1
 #define BOUNDARY_SIDE_ON_BOUNDARY 2
-const bool BANGLADESH_IS_RIGHT_OF_ORDERED_BOUNDARY = true;
+
+// Fix: With boundary segments directed south/south-west into the Bay of Bengal,
+// Bangladeshi waters (Saint Martin's Island) lie on the left (positive cross product).
+const bool BANGLADESH_IS_RIGHT_OF_ORDERED_BOUNDARY = false;
 const float BOUNDARY_SIDE_TOLERANCE_METERS = 25.0;
 
 #endif

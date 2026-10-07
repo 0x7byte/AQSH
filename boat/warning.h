@@ -44,6 +44,7 @@ void updateWarningOutputs(int warningLevel)
 {
     unsigned long currentMillis = millis();
 
+    // In SAFE mode: Green LED is ALWAYS ON! Red LED and Buzzer are OFF.
     if (warningLevel == WARNING_SAFE)
     {
         digitalWrite(GREEN_LED_PIN, HIGH);
@@ -53,24 +54,31 @@ void updateWarningOutputs(int warningLevel)
         return;
     }
 
+    // In WARNING or DANGER: Green LED is ALWAYS OFF!
     digitalWrite(GREEN_LED_PIN, LOW);
 
     if (warningLevel == WARNING_DANGER)
     {
-        digitalWrite(RED_LED_PIN, HIGH);
-        digitalWrite(BUZZER_PIN, HIGH);
-        warningOutputIsOn = true;
-        return;
+        // Rapid urgent alarm: 150ms ON / 150ms OFF (matches Receiver!)
+        if (currentMillis - lastWarningOutputChangeMillis >= DANGER_BEEP_INTERVAL_MS)
+        {
+            lastWarningOutputChangeMillis = currentMillis;
+            warningOutputIsOn = !warningOutputIsOn;
+            digitalWrite(RED_LED_PIN, warningOutputIsOn ? HIGH : LOW);
+            digitalWrite(BUZZER_PIN, warningOutputIsOn ? HIGH : LOW);
+        }
     }
-
-    if (currentMillis - lastWarningOutputChangeMillis >= SLOW_WARNING_INTERVAL_MS)
+    else if (warningLevel == WARNING_CAUTION)
     {
-        lastWarningOutputChangeMillis = currentMillis;
-        warningOutputIsOn = !warningOutputIsOn;
+        // Intermittent caution beep: 400ms ON / 400ms OFF (matches Receiver!)
+        if (currentMillis - lastWarningOutputChangeMillis >= CAUTION_BEEP_INTERVAL_MS)
+        {
+            lastWarningOutputChangeMillis = currentMillis;
+            warningOutputIsOn = !warningOutputIsOn;
+            digitalWrite(RED_LED_PIN, warningOutputIsOn ? HIGH : LOW);
+            digitalWrite(BUZZER_PIN, warningOutputIsOn ? HIGH : LOW);
+        }
     }
-
-    digitalWrite(RED_LED_PIN, warningOutputIsOn ? HIGH : LOW);
-    digitalWrite(BUZZER_PIN, warningOutputIsOn ? HIGH : LOW);
 }
 
 #endif
