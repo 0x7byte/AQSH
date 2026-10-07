@@ -33,13 +33,30 @@ inline bool startBoatRadio()
     digitalWrite(NRF_CE_PIN, LOW);
 
     // Initialize SPI on ESP32 VSPI pins (SCK, MISO, MOSI)
-    // NOTE: Do NOT pass NRF_CSN_PIN to SPI.begin on ESP32,
-    // otherwise hardware SPI locks CSN and RF24 library cannot toggle it!
     SPI.begin(NRF_SCK_PIN, NRF_MISO_PIN, NRF_MOSI_PIN);
 
-    delay(20);
+    // Give power rail and crystal oscillator time to stabilize
+    delay(100);
 
-    if (!radio.begin())
+    bool radioReady = false;
+    for (int attempt = 1; attempt <= 5; attempt++)
+    {
+        digitalWrite(NRF_CSN_PIN, HIGH);
+        digitalWrite(NRF_CE_PIN, LOW);
+        delay(20);
+
+        if (radio.begin())
+        {
+            if (radio.isChipConnected())
+            {
+                radioReady = true;
+                break;
+            }
+        }
+        delay(50);
+    }
+
+    if (!radioReady)
     {
         return false;
     }

@@ -59,9 +59,29 @@ inline bool startCoastGuardRadio()
     digitalWrite(NRF_CE_PIN, LOW);
 
     SPI.begin();
-    delay(20);
 
-    if (!radio.begin())
+    // Give power rail and crystal oscillator time to stabilize
+    delay(100);
+
+    bool radioReady = false;
+    for (int attempt = 1; attempt <= 5; attempt++)
+    {
+        digitalWrite(NRF_CSN_PIN, HIGH);
+        digitalWrite(NRF_CE_PIN, LOW);
+        delay(20);
+
+        if (radio.begin())
+        {
+            if (radio.isChipConnected())
+            {
+                radioReady = true;
+                break;
+            }
+        }
+        delay(50);
+    }
+
+    if (!radioReady)
     {
         return false;
     }
