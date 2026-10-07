@@ -1,0 +1,13 @@
+# Compiled binaries and build outputs
+*.o
+*.a
+*.so
+*.bin
+*.elf
+*.hex
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+*.swp
+*~

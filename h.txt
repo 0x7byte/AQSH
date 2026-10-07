@@ -1,0 +1,12 @@
+lcd1602 i2c
+nrf24L01+
+nodemcu 8266
+active buzzer
+
+
+
+esp32
+nrf24L01+
+active buzzer
+2 LED
+gps coordinate is simulated

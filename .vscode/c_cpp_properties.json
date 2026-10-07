@@ -1,0 +1,26 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "AquaShield Wokwi Boat (ESP32)",
+      "compilerPath": "/tmp/aquashield-platformio/packages/toolchain-xtensa-esp32/bin/xtensa-esp32-elf-g++",
+      "intelliSenseMode": "linux-gcc-x64",
+      "cStandard": "c11",
+      "cppStandard": "gnu++11",
+      "includePath": [
+        "${workspaceFolder}/Wokwi/Boat",
+        "${workspaceFolder}/Wokwi/Boat/.pio/libdeps/esp32dev/**",
+        "/tmp/aquashield-platformio/packages/framework-arduinoespressif32/cores/esp32",
+        "/tmp/aquashield-platformio/packages/framework-arduinoespressif32/variants/esp32",
+        "/tmp/aquashield-platformio/packages/framework-arduinoespressif32/libraries/**",
+        "/tmp/aquashield-platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/**"
+      ],
+      "defines": [
+        "ARDUINO=10812",
+        "ARDUINO_ARCH_ESP32",
+        "ESP32",
+        "ARDUINO_ESP32_DEV"
+      ]
+    }
+  ]
+}
